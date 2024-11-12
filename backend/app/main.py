@@ -72,7 +72,9 @@ async def weather(background_tasks: BackgroundTasks, city:str, Sessiondb: Sessio
                 file = get_latest_file(city)
                 print(file)
 
-                
+                # TODO : get the file which timestamp is less than 5 min and read the latest json file are send the response to the used
+
+
 
             response = response.json()
             if response['cod'] == 200:
@@ -105,48 +107,3 @@ async def weather(background_tasks: BackgroundTasks, city:str, Sessiondb: Sessio
                 detail=f"Error response from external API"
             )
         
-
-
-
-
-
-#         def get_city_and_timestamp(file_name):
-# try:
-# city, timestamp_str = file_name.rsplit('_', 1)
-# timestamp = float(timestamp_str.split('.')[0])
-# return city, timestamp
-# except ValueError:
-# raise ValueError("Invalid file name format. Expected format: city_timestamp.json")
-
-# def check_file_exists(city, directory='.'):
-# files = [f for f in os.listdir(directory) if f.startswith(city)]
-# return files
-
-# def get_latest_file(files):
-# latest_file = max(files, key=lambda f: get_city_and_timestamp(f)[1])
-# return latest_file
-
-# def is_recent(timestamp, minutes=5):
-# file_time = datetime.fromtimestamp(timestamp)
-# return datetime.now() - file_time < timedelta(minutes=minutes)
-
-# def main(file_name, directory='.'):
-# city, timestamp = get_city_and_timestamp(file_name)
-# files = check_file_exists(city, directory)
-
-# if files:
-# latest_file = get_latest_file(files)
-# latest_timestamp = get_city_and_timestamp(latest_file)[1]
-
-# if is_recent(latest_timestamp):
-# with open(os.path.join(directory, latest_file), 'r') as f:
-# data = f.read()
-# return data
-# else:
-# return "No recent file found."
-# else:
-# return "No file found for the given city."
-
-# # Example usage
-# file_name = "dhaka_1731396873.266913.json"
-# print(main(file_name))
