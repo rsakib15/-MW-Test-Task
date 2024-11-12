@@ -19,29 +19,34 @@ app = FastAPI()
 def read_root():
     return {"response": "Hello World"}
 
-def get_city_and_timestamp(file_name):
-    print(file_name)
-    try:
-        city, timestamp_str = file_name.rsplit('_', 1)
-        print(city, timestamp)
-        timestamp = float(timestamp_str.split('.')[0])
-        return city, timestamp
-    except ValueError:
-        raise ValueError("Invalid file name format. Expected format: city_timestamp.json")
+def get_latest_file_with_city(city_name):
+    files_list = [f for f in os.listdir(os.getcwd() + '/weather_data') if f.startswith(city_name)]
 
-def check_file_exists(city):
-    files = [f for f in os.listdir(os.getcwd() + '/weather_data') if f.startswith(city)]
-    latest_file = max(files, key=lambda f: get_city_and_timestamp(f)[1])
-    print(latest_file)
-    return True if len(files) > 0 else False
+    latest_file = None
+    latest_timestamp = None
     
-def get_latest_file(file_name):
-    try:
-        city, timestamp_str = file_name.rsplit('_', 1)
-        timestamp = float(timestamp_str.split('.')[0])
-        return city, timestamp
-    except ValueError:
-        raise ValueError("Invalid file name format. Expected format: city_timestamp.json")
+    for file_path in files_list:
+        file_name = os.path.basename(file_path)
+        
+        if city_name in file_name:
+            try:
+                timestamp_str = ''.join(filter(str.isdigit, file_name.split(city_name)[-1]))
+                timestamp = datetime.strptime(timestamp_str, '%Y%m%d%H%M%S')
+
+                if latest_timestamp is None or timestamp > latest_timestamp:
+                    
+                    if latest_timestamp is not None:
+                        time_difference = abs(timestamp - latest_timestamp)
+                        if time_difference > 300:
+                            continue
+
+                    latest_file = file_path
+                    latest_timestamp = timestamp
+            except (ValueError, IndexError):
+                pass
+
+    return latest_file
+
         
 
 @app.get("/weather")
@@ -57,7 +62,7 @@ async def weather(background_tasks: BackgroundTasks, city:str, Sessiondb: Sessio
                 
             await asyncio.sleep(2) 
             response = await client.get(url)
-            current_timestamp = datetime.now().timestamp()
+            current_timestamp = datetime.now()
 
             file_name = f"weather_data/{city}_{current_timestamp}.json"
             
@@ -65,16 +70,19 @@ async def weather(background_tasks: BackgroundTasks, city:str, Sessiondb: Sessio
             with open(file_name, "w") as outfile:
                 json.dump(response.text, outfile)
 
-            await create_weather(Sessiondb, city, str(current_timestamp), file_name)
+            # await create_weather(Sessiondb, city, str(current_timestamp), file_name)
+            latest_file = get_latest_file_with_city(city)
+            if latest_file:
+                with open(f"weather_data/{latest_file}.json", r) as file:
+                    data = file.load()
+                    return {
+                        "status_code": "200",
+                        "messsge": {
+                            "location": data["name"],
+                            "temparature": data["main"]["temp"]
 
-            # Caching with S3/Local Equivalent
-            if check_file_exists(city):
-                file = get_latest_file(city)
-                print(file)
-
-                # TODO : get the file which timestamp is less than 5 min and read the latest json file are send the response to the used
-
-
+                        }
+                    }
 
             response = response.json()
             if response['cod'] == 200:
