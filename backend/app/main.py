@@ -59,18 +59,8 @@ async def weather(background_tasks: BackgroundTasks, city:str, Sessiondb: Sessio
             if not os.path.exists(os.getcwd() + '/weather_data'):
                 directory_name = "weather_data"
                 os.mkdir(directory_name)
-                
-            await asyncio.sleep(2) 
-            response = await client.get(url)
-            current_timestamp = datetime.now()
 
-            file_name = f"weather_data/{city}_{current_timestamp}.json"
-            
-            # Store each fetched weather response as a JSON file in an S3 bucket or a loca
-            with open(file_name, "w") as outfile:
-                json.dump(response.text, outfile)
-
-            # await create_weather(Sessiondb, city, str(current_timestamp), file_name)
+            # get caching data 
             latest_file = get_latest_file_with_city(city)
             if latest_file:
                 with open(f"weather_data/{latest_file}.json", r) as file:
@@ -83,6 +73,19 @@ async def weather(background_tasks: BackgroundTasks, city:str, Sessiondb: Sessio
 
                         }
                     }
+                
+            await asyncio.sleep(2) 
+            response = await client.get(url)
+            current_timestamp = datetime.now()
+
+            file_name = f"weather_data/{city}_{current_timestamp}.json"
+            
+            # Store each fetched weather response as a JSON file in an S3 bucket or a local
+            with open(file_name, "w") as outfile:
+                json.dump(response.text, outfile)
+
+            # insert log data in databaswe 
+            await create_weather(Sessiondb, city, str(current_timestamp), file_name)
 
             response = response.json()
             if response['cod'] == 200:
