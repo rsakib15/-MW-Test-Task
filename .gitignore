@@ -1,0 +1,15 @@
+# Python
+*.py[cod]
+__pycache__/
+*.so
+*.egg
+*.egg-info/
+.eggs/
+
+# FastAPI specific
+instance/
+.pytest_cache/
+pytest_cache/
+.cache/
+
+backend/weather_data
